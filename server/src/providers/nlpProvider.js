@@ -41,13 +41,18 @@ const tryTier1Gemini = async ({ transcript, category, materials, rawMaterialCost
     throw new Error('[Tier 1: Gemini] Missing GEMINI_API_KEY');
   }
 
+  const cleanTranscript = (transcript || '').trim();
+  const effectiveDetails = cleanTranscript
+    ? `Artisan Voice Transcript: "${cleanTranscript}"`
+    : `(Artisan provided silent/visual craft details for this listing)`;
+
   console.log('[NLPProvider] Attempting Tier 1: Google Gemini API...');
 
   const geminiAction = async () => {
     const prompt = `You are an expert e-commerce cataloger for Indian artisans and weavers.
-Based on the following artisan voice description and product details, generate an attractive, SEO-friendly e-commerce product title and detailed description in BOTH English and Hindi.
+Based on the following product details, generate an authentic, attractive, SEO-friendly e-commerce product title and cultural description in BOTH English and Hindi.
 
-Artisan Transcript: "${transcript || 'Handmade traditional craft'}"
+${effectiveDetails}
 Category: "${category || 'Handicraft'}"
 Materials: "${Array.isArray(materials) ? materials.join(', ') : materials || 'Traditional materials'}"
 Raw Cost: ${rawMaterialCost || 'Not specified'}
@@ -111,13 +116,18 @@ const tryTier2OpenRouter = async ({ transcript, category, materials }) => {
     throw new Error('[Tier 2: OpenRouter] Missing OPENROUTER_API_KEY');
   }
 
+  const cleanTranscript = (transcript || '').trim();
+  const effectiveDetails = cleanTranscript
+    ? `Transcript: "${cleanTranscript}"`
+    : `(Artisan craft description based on materials and category)`;
+
   console.log('[NLPProvider] Attempting Tier 2: OpenRouter API...');
 
   const openRouterAction = async () => {
     const prompt = `Generate a JSON e-commerce title and description in English and Hindi for this artisan craft:
-Transcript: ${transcript || 'Authentic handmade product'}
-Category: ${category}
-Materials: ${Array.isArray(materials) ? materials.join(', ') : materials}
+${effectiveDetails}
+Category: ${category || 'Handicraft'}
+Materials: ${Array.isArray(materials) ? materials.join(', ') : materials || 'Authentic materials'}
 
 Respond ONLY with valid JSON:
 {

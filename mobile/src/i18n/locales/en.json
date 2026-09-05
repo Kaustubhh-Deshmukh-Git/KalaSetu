@@ -243,6 +243,20 @@
     "invalidPrice": "Please enter a valid selling price.",
     "savedSuccess": "Your selling price of ₹{{price}} has been saved.",
     "saveError": "Failed to save price."
+  },
+  "sahayak": {
+    "title": "Sahayak AI Assistant",
+    "subtitle": "Your voice-first virtual business companion",
+    "tapToSpeak": "Tap to speak",
+    "listening": "Listening... Speak naturally in Hindi or English",
+    "thinking": "Sahayak is checking your data...",
+    "typePlaceholder": "Type or speak your question...",
+    "quickQuestions": "Quick Questions",
+    "listen": "Listen",
+    "stop": "Stop",
+    "orderStatus": "Order Updates",
+    "listingStatus": "Product Status",
+    "howTo": "How-To Guide"
   }
 }
 

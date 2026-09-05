@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/authStore';
 import { LanguageSwitcher } from '../../components/LanguageSwitcher/LanguageSwitcher';
+import { SahayakModal } from '../../components/SahayakModal';
 import { Ionicons } from '@expo/vector-icons';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -22,6 +23,7 @@ export const HomeScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
+  const [isSahayakOpen, setIsSahayakOpen] = React.useState(false);
 
   const handleNavigate = (route: any, params?: any) => {
     navigation.navigate(route, params);
@@ -47,9 +49,7 @@ export const HomeScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.sahayakCard}
           activeOpacity={0.85}
-          onPress={() => {
-            // Sahayak Assistant entry (Phase 7 ready)
-          }}
+          onPress={() => setIsSahayakOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Sahayak Voice AI Assistant"
         >
@@ -57,12 +57,18 @@ export const HomeScreen: React.FC = () => {
             <Ionicons name="mic" size={24} color="#FFFFFF" />
           </View>
           <View style={styles.sahayakDetails}>
-            <Text style={styles.sahayakTitle}>Sahayak Voice AI</Text>
+            <Text style={styles.sahayakTitle}>Sahayak Voice AI (सहायक)</Text>
             <Text style={styles.sahayakSub}>{t('home.sahayakPrompt')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#EA580C" />
         </TouchableOpacity>
       </View>
+
+      {/* Sahayak Modal */}
+      <SahayakModal
+        visible={isSahayakOpen}
+        onClose={() => setIsSahayakOpen(false)}
+      />
 
       {/* Body Content */}
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

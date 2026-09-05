@@ -1,6 +1,9 @@
+import os
 import logging
 from typing import List, Optional
+# pyrefly: ignore [missing-import]
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from .model import pricing_model
 
@@ -11,6 +14,17 @@ app = FastAPI(
     title="KalaSetu Dynamic Pricing Microservice",
     description="ML-powered handicraft pricing engine with deterministic cost-plus fallback",
     version="1.0.0",
+)
+
+cors_origins_env = os.getenv("CORS_ORIGIN", "*")
+origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()] if cors_origins_env != "*" else ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -41,6 +55,7 @@ class PricePredictionResponse(BaseModel):
 
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {
         "status": "ok",
