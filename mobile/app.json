@@ -6,9 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "backgroundColor": "#7C2D12"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -22,7 +19,9 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-asset"
+      "expo-asset",
+      "expo-font",
+      "expo-status-bar"
     ]
   }
 }
