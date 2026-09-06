@@ -22,6 +22,12 @@
       "expo-asset",
       "expo-font",
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "64695d25-8e33-4d49-be46-0e66ba83b8c5"
+      }
+    },
+    "owner": "kaustubhh-deshmukh-git"
   }
 }
