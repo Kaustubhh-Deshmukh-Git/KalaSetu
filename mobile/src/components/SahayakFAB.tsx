@@ -62,7 +62,7 @@ export const SahayakFAB: React.FC<SahayakFABProps> = ({ onPress }) => {
           <Text style={styles.title}>{isHindi ? 'सहायक AI' : 'Sahayak AI'}</Text>
           <Text style={styles.subtitle}>{isHindi ? 'बोलकर पूछें' : 'Voice Assistant'}</Text>
         </View>
-        <MaterialCommunityIcons name="sparkles" size={16} color="#FDE047" style={styles.sparkle} />
+        <MaterialCommunityIcons name="creation" size={16} color="#FDE047" style={styles.sparkle} />
       </TouchableOpacity>
     </Animated.View>
   );

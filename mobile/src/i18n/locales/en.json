@@ -257,6 +257,11 @@
     "orderStatus": "Order Updates",
     "listingStatus": "Product Status",
     "howTo": "How-To Guide"
+  },
+  "serverWake": {
+    "wakingUp": "Waking up the server, this may take a moment...",
+    "subtext": "Connecting to KalaSetu cloud services",
+    "connected": "Server connected & ready!"
   }
 }
 

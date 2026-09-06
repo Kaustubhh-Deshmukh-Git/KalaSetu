@@ -3,35 +3,51 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-const getBaseUrl = (): string => {
-  // 1. Explicit env var override
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL;
+const DEFAULT_BACKEND_URL = 'https://kalasetu-backend-trh4.onrender.com';
+
+/**
+ * Returns the root backend URL (without trailing slash or /api)
+ */
+export const getBackendRootUrl = (): string => {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '').replace(/\/api$/, '');
   }
-
-  // 2. Web browser running on the same machine
-  if (Platform.OS === 'web') {
-    return 'http://localhost:5000/api';
-  }
-
-  // 3. Physical phone or emulator running in Expo Go:
-  // Automatically extract the developer's machine LAN IP from Metro hostUri
-  const hostUri =
-    Constants.expoConfig?.hostUri ||
-    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
-    (Constants as any).manifest?.debuggerHost;
-
-  if (hostUri) {
-    const host = hostUri.split(':')[0];
-    if (host && host !== 'localhost' && host !== '127.0.0.1') {
-      return `http://${host}:5000/api`;
-    }
-  }
-
-  return 'http://localhost:5000/api';
+  return DEFAULT_BACKEND_URL;
 };
 
-export const API_BASE_URL = getBaseUrl();
+/**
+ * Returns the full /api base URL
+ */
+export const getApiBaseUrl = (): string => {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+  if (envUrl) {
+    const clean = envUrl.replace(/\/+$/, '');
+    return clean.endsWith('/api') ? clean : `${clean}/api`;
+  }
+  return `${DEFAULT_BACKEND_URL}/api`;
+};
+
+export const BACKEND_ROOT_URL = getBackendRootUrl();
+export const API_BASE_URL = getApiBaseUrl();
+
+/**
+ * Health check helper to verify if the server is awake and responding
+ */
+export const checkServerHealth = async (timeoutMs = 5000): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
