@@ -6,7 +6,7 @@
 
 ## 🌟 Overview
 
-**KalaSetu** (*Bridge of Art*) is an end-to-end AI-powered Virtual Business Manager built for rural and semi-urban artisans across India. It eliminates the digital and linguistic barriers preventing master craftsmen and self-help groups from scaling their businesses online.
+**KalaSetu** (*Bridge of Art*) is an end-to-end AI-powered Virtual Business Manager built for rural and semi-urban artisans across India. It eliminates the digital and linguistic barriers preventing master craftsmen and self-help groups from scaling their busineses online and Marketplaces.
 
 With a voice-first interface, resilient multi-tier fallback architecture, automated studio photography generation, intelligent pricing models, and 1-click marketplace catalog syndication, KalaSetu transforms how traditional crafts reach global buyers.
 
