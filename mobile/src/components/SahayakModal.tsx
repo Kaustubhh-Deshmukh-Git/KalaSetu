@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+import { SafeAudio } from '../utils/safeAudio';
 import { sahayakApi, SahayakPrompt, SahayakQueryResponse } from '../services/sahayakApi';
 import { useTranslation } from 'react-i18next';
 
@@ -26,7 +26,7 @@ export const SahayakModal: React.FC<SahayakModalProps> = ({ visible, onClose }) 
   const isHindiDefault = i18n.language === 'hi';
   const [activeLang, setActiveLang] = useState<'hi' | 'en'>(isHindiDefault ? 'hi' : 'en');
 
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recording, setRecording] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [textInput, setTextInput] = useState('');
@@ -122,20 +122,18 @@ export const SahayakModal: React.FC<SahayakModalProps> = ({ visible, onClose }) 
 
   const startRecording = async () => {
     try {
-      const permission = await Audio.requestPermissionsAsync();
-      if (!permission.granted) {
+      const permission = await SafeAudio.requestPermissionsAsync();
+      if (permission.status !== 'granted') {
         alert(activeLang === 'hi' ? 'माइक्रोफ़ोन अनुमति की आवश्यकता है।' : 'Microphone permission is required.');
         return;
       }
 
-      await Audio.setAudioModeAsync({
+      await SafeAudio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      const { recording: newRecording } = await SafeAudio.createRecordingAsync();
       setRecording(newRecording);
       setIsRecording(true);
     } catch (err) {

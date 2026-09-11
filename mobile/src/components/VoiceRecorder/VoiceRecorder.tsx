@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { Audio } from 'expo-av';
+import { SafeAudio } from '../../utils/safeAudio';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,9 +20,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   recordedUri,
 }) => {
   const { t } = useTranslation();
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recording, setRecording] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [sound, setSound] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [durationSecs, setDurationSecs] = useState(0);
 
@@ -41,24 +41,22 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   useEffect(() => {
     return () => {
       if (sound) {
-        sound.unloadAsync();
+        sound.unloadAsync?.();
       }
     };
   }, [sound]);
 
   const startRecording = async () => {
     try {
-      const permission = await Audio.requestPermissionsAsync();
+      const permission = await SafeAudio.requestPermissionsAsync();
       if (permission.status !== 'granted') return;
 
-      await Audio.setAudioModeAsync({
+      await SafeAudio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
 
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      const { recording: newRecording } = await SafeAudio.createRecordingAsync();
 
       setRecording(newRecording);
       setIsRecording(true);
@@ -90,25 +88,24 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
     if (sound) {
       if (isPlaying) {
-        await sound.pauseAsync();
+        await sound.pauseAsync?.();
         setIsPlaying(false);
       } else {
-        await sound.playAsync();
+        await sound.playAsync?.();
         setIsPlaying(true);
       }
     } else {
-      const { sound: newSound } = await Audio.Sound.createAsync(
+      const { sound: newSound } = await SafeAudio.createSoundAsync(
         { uri: recordedUri },
-        { shouldPlay: true }
+        { shouldPlay: true },
+        (status: any) => {
+          if (status?.didJustFinish) {
+            setIsPlaying(false);
+          }
+        }
       );
       setSound(newSound);
       setIsPlaying(true);
-
-      newSound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          setIsPlaying(false);
-        }
-      });
     }
   };
 
