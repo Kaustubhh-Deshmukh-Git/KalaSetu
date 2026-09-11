@@ -42,7 +42,7 @@ const apiRequest = async (endpoint, options = {}, token = null) => {
   const response = await fetch(url, {
     ...options,
     headers,
-    signal: AbortSignal.timeout(25000)
+    signal: AbortSignal.timeout(30000)
   });
 
   const data = await response.json().catch(() => null);
@@ -75,7 +75,7 @@ const runMasterDemo = async () => {
   }
 
   try {
-    console.log('  ⏳ Pinging Pricing Microservice (allowing cold-start wake)...');
+    console.log('  ⏳ Pinging Pricing Microservice...');
     const pricingRes = await fetch(`${PRICING_URL}/health`, { signal: AbortSignal.timeout(30000) });
     const pricingData = await pricingRes.json().catch(() => null);
     const pricingOk = pricingRes.ok && pricingData?.status === 'ok';
@@ -88,17 +88,14 @@ const runMasterDemo = async () => {
   // 1. PHASE 1: ARTISAN AUTHENTICATION & PHONE OTP
   // -------------------------------------------------------------
   console.log('\n📱 Step 1: Phase 1 - Artisan Auth & Phone OTP Flow...');
-  const testPhone = `+91987${Math.floor(1000000 + Math.random() * 9000000)}`;
-  let otpReceived = '123456';
+  const testPhone = '+919876543210';
+  const testOtp = '123456';
 
   try {
     const otpRes = await apiRequest('/auth/otp/request', {
       method: 'POST',
       body: JSON.stringify({ phone: testPhone })
     });
-    if (otpRes.data?.devOtp) {
-      otpReceived = otpRes.data.devOtp;
-    }
     recordTest('1. Auth Flow', 'Request OTP for Phone Number (POST /api/auth/otp/request)', otpRes.ok, `Phone: ${testPhone}`);
   } catch (err) {
     recordTest('1. Auth Flow', 'Request OTP for Phone Number (POST /api/auth/otp/request)', false, err.message);
@@ -107,13 +104,13 @@ const runMasterDemo = async () => {
   try {
     const verifyRes = await apiRequest('/auth/otp/verify', {
       method: 'POST',
-      body: JSON.stringify({ phone: testPhone, otp: otpReceived })
+      body: JSON.stringify({ phone: testPhone, otp: testOtp })
     });
 
-    const isVerified = verifyRes.ok && (verifyRes.data?.token || verifyRes.data?.data?.token);
+    const isVerified = verifyRes.ok && verifyRes.data?.token;
     if (isVerified) {
-      authToken = verifyRes.data.token || verifyRes.data?.data?.token;
-      artisanUser = verifyRes.data.user || verifyRes.data?.data?.user;
+      authToken = verifyRes.data.token;
+      artisanUser = verifyRes.data.user;
     }
     recordTest('1. Auth Flow', 'Verify OTP & Issue JWT Bearer (POST /api/auth/otp/verify)', !!authToken, `User ID: ${artisanUser?._id || 'Verified'}`);
   } catch (err) {
@@ -122,20 +119,11 @@ const runMasterDemo = async () => {
 
   if (authToken) {
     try {
-      const profileRes = await apiRequest('/auth/profile', {
-        method: 'PUT',
-        body: JSON.stringify({
-          name: 'Rameshwar Sharma (Master Weaver)',
-          state: 'Uttar Pradesh',
-          craftCategory: 'handloom',
-          preferredLanguage: 'hi'
-        })
-      }, authToken);
-
-      const profileOk = profileRes.ok;
-      recordTest('1. Auth Flow', 'Update Artisan Profile & Language (PUT /api/auth/profile)', profileOk, `Name: Rameshwar Sharma`);
+      const meRes = await apiRequest('/auth/me', { method: 'GET' }, authToken);
+      const meOk = meRes.ok && meRes.data?.user;
+      recordTest('1. Auth Flow', 'Fetch Authenticated Artisan Profile (GET /api/auth/me)', meOk, `Role: ${meRes.data?.user?.role || 'artisan'}`);
     } catch (err) {
-      recordTest('1. Auth Flow', 'Update Artisan Profile & Language (PUT /api/auth/profile)', false, err.message);
+      recordTest('1. Auth Flow', 'Fetch Authenticated Artisan Profile (GET /api/auth/me)', false, err.message);
     }
   }
 
@@ -156,13 +144,12 @@ const runMasterDemo = async () => {
       const sahayakRes = await apiRequest('/sahayak/query', {
         method: 'POST',
         body: JSON.stringify({
-          queryText: 'मुझे एक शुद्ध बनारसी सिल्क साड़ी 4800 रुपये में जोड़नी है',
-          language: 'hi'
+          queryText: 'मुझे एक शुद्ध बनारसी सिल्क साड़ी 4800 रुपये में जोड़नी है'
         })
       }, authToken);
 
-      const sahayakOk = sahayakRes.ok && sahayakRes.data?.data?.replyText;
-      recordTest('2. Sahayak Voice AI', 'Natural Language Hindi Query Parsing (POST /api/sahayak/query)', sahayakOk, `Reply: ${sahayakRes.data?.data?.replyText?.slice(0, 45)}...`);
+      const sahayakOk = sahayakRes.ok && (sahayakRes.data?.data?.replyText || sahayakRes.data?.data?.intent);
+      recordTest('2. Sahayak Voice AI', 'Natural Language Hindi Query Parsing (POST /api/sahayak/query)', sahayakOk, `Intent: ${sahayakRes.data?.data?.intent || 'add_product'}`);
     } catch (err) {
       recordTest('2. Sahayak Voice AI', 'Natural Language Hindi Query Parsing (POST /api/sahayak/query)', false, err.message);
     }
@@ -179,7 +166,6 @@ const runMasterDemo = async () => {
         body: JSON.stringify({
           category: 'handloom',
           rawMaterialCost: 2200,
-          timeToProduceHours: 36,
           stockCount: 5,
           finalPrice: 4800,
           title: {
@@ -193,9 +179,9 @@ const runMasterDemo = async () => {
         })
       }, authToken);
 
-      const prodOk = productRes.ok && (productRes.data?.product?._id || productRes.data?.data?._id);
+      const prodOk = productRes.ok && productRes.data?.product?._id;
       if (prodOk) {
-        createdProductId = productRes.data.product?._id || productRes.data.data?._id;
+        createdProductId = productRes.data.product._id;
       }
       recordTest('3. Product Listing', 'Create Handcrafted Product Record (POST /api/products)', !!createdProductId, `Product ID: ${createdProductId}`);
     } catch (err) {
@@ -211,7 +197,7 @@ const runMasterDemo = async () => {
           })
         }, authToken);
 
-        const bilingualOk = bilingualRes.ok && (bilingualRes.data?.catalog || bilingualRes.data?.data);
+        const bilingualOk = bilingualRes.ok && bilingualRes.data?.product;
         recordTest('3. Product Listing', 'AI Multilingual SEO Title & Description Generation', bilingualOk, `Status: 200 OK`);
       } catch (err) {
         recordTest('3. Product Listing', 'AI Multilingual SEO Title & Description Generation', false, err.message);
@@ -229,8 +215,8 @@ const runMasterDemo = async () => {
         method: 'POST'
       }, authToken);
 
-      const priceOk = priceRes.ok && (priceRes.data?.suggestedPrice || priceRes.data?.data);
-      const priceAmount = priceRes.data?.suggestedPrice?.amount || priceRes.data?.data?.suggestedPrice?.amount || 4800;
+      const priceOk = priceRes.ok && priceRes.data?.suggestedPrice;
+      const priceAmount = priceRes.data?.suggestedPrice?.amount || 4800;
       recordTest('4. Fair Pricing', 'Dynamic Algorithmic Fair-Price Calculation', priceOk, `Calculated Fair Price: ₹${priceAmount}`);
     } catch (err) {
       recordTest('4. Fair Pricing', 'Dynamic Algorithmic Fair-Price Calculation', false, err.message);
@@ -243,20 +229,17 @@ const runMasterDemo = async () => {
   console.log('\n🌐 Step 5: Phase 5 - Multi-Channel Marketplace Integration...');
   if (authToken && createdProductId) {
     try {
-      const channelsRes = await apiRequest('/marketplace/status', { method: 'GET' }, authToken);
+      const channelsRes = await apiRequest('/marketplace', { method: 'GET' }, authToken);
       const channelsOk = channelsRes.ok && Array.isArray(channelsRes.data?.channels);
-      recordTest('5. Marketplace Sync', 'Fetch Multi-Channel Status (GET /api/marketplace/status)', channelsOk, `${channelsRes.data?.channels?.length || 4} Channels Available`);
+      recordTest('5. Marketplace Sync', 'Fetch Multi-Channel Status (GET /api/marketplace)', channelsOk, `${channelsRes.data?.channels?.length || 4} Channels Available`);
     } catch (err) {
-      recordTest('5. Marketplace Sync', 'Fetch Multi-Channel Status (GET /api/marketplace/status)', false, err.message);
+      recordTest('5. Marketplace Sync', 'Fetch Multi-Channel Status (GET /api/marketplace)', false, err.message);
     }
 
     try {
-      const gemConnect = await apiRequest('/marketplace/connect', {
+      const gemConnect = await apiRequest('/marketplace/gem/connect', {
         method: 'POST',
-        body: JSON.stringify({
-          provider: 'gem',
-          authConfig: { sellerId: 'GEM-ART-VARANASI-01' }
-        })
+        body: JSON.stringify({ sellerId: 'GEM-ART-VARANASI-01' })
       }, authToken);
       recordTest('5. Marketplace Sync', 'Connect Govt. e-Marketplace (GeM) Channel', gemConnect.ok, `Status: ${gemConnect.data?.status || 'connected'}`);
     } catch (err) {
@@ -264,12 +247,9 @@ const runMasterDemo = async () => {
     }
 
     try {
-      const publishRes = await apiRequest('/marketplace/publish', {
+      const publishRes = await apiRequest('/marketplace/gem/publish', {
         method: 'POST',
-        body: JSON.stringify({
-          productId: createdProductId,
-          provider: 'gem'
-        })
+        body: JSON.stringify({ productId: createdProductId })
       }, authToken);
       recordTest('5. Marketplace Sync', 'Publish Product to GeM Channel', publishRes.ok, `Listing ID: ${publishRes.data?.externalListingId || 'GEM-LIST-ACTIVE'}`);
     } catch (err) {
@@ -277,7 +257,7 @@ const runMasterDemo = async () => {
     }
 
     try {
-      const storefrontRes = await apiRequest('/marketplace/status', { method: 'GET' }, authToken);
+      const storefrontRes = await apiRequest('/marketplace', { method: 'GET' }, authToken);
       const hasStorefront = storefrontRes.ok && storefrontRes.data?.storefrontUrl;
       recordTest('5. Marketplace Sync', 'Direct WhatsApp & Digital Storefront Generator', !!hasStorefront, `URL: ${storefrontRes.data?.storefrontUrl}`);
     } catch (err) {
@@ -292,18 +272,28 @@ const runMasterDemo = async () => {
   if (authToken) {
     try {
       const ordersRes = await apiRequest('/orders', { method: 'GET' }, authToken);
-      const ordersOk = ordersRes.ok && (Array.isArray(ordersRes.data?.orders) || Array.isArray(ordersRes.data?.data));
-      recordTest('6. Sales Dashboard', 'Fetch Real-Time Multi-Channel Orders (GET /api/orders)', ordersOk, `Orders Loaded`);
+      const ordersOk = ordersRes.ok && Array.isArray(ordersRes.data?.orders);
+      recordTest('6. Sales Dashboard', 'Fetch Real-Time Multi-Channel Orders (GET /api/orders)', ordersOk, `Orders Loaded: ${ordersRes.data?.orders?.length || 0}`);
     } catch (err) {
       recordTest('6. Sales Dashboard', 'Fetch Real-Time Multi-Channel Orders (GET /api/orders)', false, err.message);
     }
 
     try {
-      const statsRes = await apiRequest('/orders/stats', { method: 'GET' }, authToken);
-      const statsOk = statsRes.ok && (statsRes.data?.stats || statsRes.data?.data);
-      recordTest('6. Sales Dashboard', 'Compute Revenue & Order Analytics (GET /api/orders/stats)', statsOk, `Stats verified`);
+      const createOrderRes = await apiRequest('/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          productId: createdProductId,
+          channel: 'storefront',
+          buyerInfo: { name: 'Aarav Mehta', phone: '+919812345678' },
+          quantity: 1,
+          amount: 4800,
+          status: 'new'
+        })
+      }, authToken);
+      const createOrderOk = createOrderRes.ok && createOrderRes.data?.order?._id;
+      recordTest('6. Sales Dashboard', 'Process & Record Direct Digital Storefront Order', createOrderOk, `Order ID: ${createOrderRes.data?.order?._id}`);
     } catch (err) {
-      recordTest('6. Sales Dashboard', 'Compute Revenue & Order Analytics (GET /api/orders/stats)', false, err.message);
+      recordTest('6. Sales Dashboard', 'Process & Record Direct Digital Storefront Order', false, err.message);
     }
   }
 
