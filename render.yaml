@@ -25,6 +25,10 @@ services:
         value: kalasetu_credential_key_32bytes_dev_only!
       - key: CORS_ORIGIN
         value: "*"
+      - key: MONGO_URI
+        sync: false
+      - key: PRICING_SERVICE_URL
+        value: https://kalasetu-pricing-service.onrender.com
 
   # 2. KalaSetu Pricing Microservice
   - type: web

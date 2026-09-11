@@ -42,12 +42,20 @@ const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Health check endpoints (GET /api/health and GET /health)
+const mongoose = require('mongoose');
 const handleHealthCheck = (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1
+    ? 'connected'
+    : mongoose.connection.readyState === 2
+    ? 'connecting'
+    : 'disconnected';
+
   res.status(200).json({
     status: 'ok',
     service: 'KalaSetu Backend API',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
+    database: dbStatus,
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });
