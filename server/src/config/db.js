@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const config = require('./env');
 
@@ -7,6 +8,14 @@ let mongoMemoryServer = null;
 const connectDB = async () => {
   try {
     let uri = config.mongoUri;
+
+    if (uri && uri.startsWith('mongodb+srv://')) {
+      try {
+        dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+      } catch (dnsErr) {
+        console.warn('[DB] Custom DNS server setup note:', dnsErr.message);
+      }
+    }
 
     if (!uri) {
       console.log('[DB] No MONGO_URI provided. Starting in-memory MongoDB instance (mongodb-memory-server)...');
