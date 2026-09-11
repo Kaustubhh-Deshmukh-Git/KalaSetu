@@ -13,7 +13,7 @@ try {
     ExpoAudio = av.Audio;
   }
 } catch (e) {
-  console.warn('[SafeAudio] Native ExponentAV module unavailable. Using safe fallback audio stub.');
+  // Gracefully fallback to safe stub
 }
 
 export class SafeRecording {
