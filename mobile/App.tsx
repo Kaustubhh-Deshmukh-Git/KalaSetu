@@ -6,7 +6,11 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { ServerWakeBanner } from './src/components/ServerWakeBanner';
 import './src/i18n';
 
-LogBox.ignoreLogs(['[SafeAudio]', 'ExponentAV']);
+LogBox.ignoreLogs([
+  '[SafeAudio]',
+  'ExponentAV',
+  'SafeAreaView has been deprecated',
+]);
 
 export default function App() {
   return (
