@@ -70,38 +70,47 @@ Respond ONLY with valid JSON matching this exact structure:
   "tags": ["tag1", "tag2", "tag3", "tag4"]
 }`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3,
-          responseMimeType: 'application/json',
-        },
-      }),
-    });
+    const candidateModels = [process.env.GEMINI_MODEL, 'gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-pro-latest'].filter(Boolean);
+    let lastError = null;
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API returned ${response.status}: ${errText}`);
+    for (const modelName of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.3,
+              responseMimeType: 'application/json',
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const rawJsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawJsonText) {
+            const parsed = JSON.parse(rawJsonText);
+            return {
+              title: parsed.title,
+              description: parsed.description,
+              tags: parsed.tags || [],
+              provider: `google_gemini (${modelName})`,
+              tier: 1,
+            };
+          }
+        } else {
+          const errText = await response.text();
+          lastError = new Error(`Gemini (${modelName}) returned ${response.status}: ${errText}`);
+        }
+      } catch (err) {
+        lastError = err;
+      }
     }
 
-    const data = await response.json();
-    const rawJsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawJsonText) {
-      throw new Error('Gemini returned empty response');
-    }
-
-    const parsed = JSON.parse(rawJsonText);
-    return {
-      title: parsed.title,
-      description: parsed.description,
-      tags: parsed.tags || [],
-      provider: 'google_gemini',
-      tier: 1,
-    };
+    throw (lastError || new Error('All Gemini model attempts failed'));
   };
 
   return await withTimeout(geminiAction(), TIMEOUT_NLP_MS, 'Tier 1 (Gemini)');
