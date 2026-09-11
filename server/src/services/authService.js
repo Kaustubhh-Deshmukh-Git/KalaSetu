@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const config = require('../config/env');
+const smsService = require('./smsService');
 
 /**
  * Generate a 6-digit numeric OTP
@@ -55,18 +56,24 @@ const requestOtp = async (phone) => {
 
   await user.save();
 
+  // Dispatch real-world SMS
+  const smsResult = await smsService.sendOtpSms(cleanPhone, rawOtp);
+
   console.log(`\n========================================`);
-  console.log(`[AUTH SERVICE - DEV OTP]`);
+  console.log(`[AUTH SERVICE - OTP DISPATCH]`);
   console.log(`Phone: ${cleanPhone}`);
   console.log(`OTP Code: ${rawOtp}`);
+  console.log(`SMS Sent: ${smsResult.sent ? 'YES (' + smsResult.provider + ')' : 'NO (Sandbox Mode)'}`);
   console.log(`Expires in: ${config.otp.expiryMinutes} minutes`);
   console.log(`========================================\n`);
 
   return {
     success: true,
-    message: 'OTP sent successfully',
+    message: smsResult.sent ? 'OTP sent via SMS to your phone' : 'OTP sent successfully',
     expiresInMinutes: config.otp.expiryMinutes,
     devOtp: rawOtp,
+    smsSent: smsResult.sent,
+    smsProvider: smsResult.provider,
   };
 };
 
