@@ -10,6 +10,7 @@ LogBox.ignoreLogs([
   '[SafeAudio]',
   'ExponentAV',
   'SafeAreaView has been deprecated',
+  'Cannot connect to Expo CLI',
 ]);
 
 export default function App() {
